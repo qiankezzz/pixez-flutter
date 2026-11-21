@@ -19,12 +19,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Rust toolchain (for PixEz native plugins)
+      - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
 
-      - name: Setup Flutter (via mise.toml if present)
+      - name: Setup Flutter (via mise.toml)
         id: setup-flutter
         uses: jdx/mise-action@v2
         continue-on-error: true
@@ -36,10 +36,21 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install Dart dependencies
-        run: flutter pub get
+      - name: Generate rhttp freezed/g.dart files
+        run: |
+          if [ -d "plugins/rhttp/rhttp" ]; then
+            cd plugins/rhttp/rhttp
+            flutter pub get
+            dart run build_runner build --delete-conflicting-outputs
+          fi
 
-      - name: Build split release APKs (arm64-v8a / armeabi-v7a)
+      - name: Install dependencies & generate code (.g.dart / .freezed.dart)
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build split release APKs
         run: flutter build apk --release --split-per-abi
 
       - name: Upload Studio APK Artifact
