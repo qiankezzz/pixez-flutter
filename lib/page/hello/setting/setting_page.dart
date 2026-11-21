@@ -109,7 +109,7 @@ class _SettingPageState extends State<SettingPage> {
                   thumbnailUrl: it.imageUrls.squareMedium,
                   views: it.totalView,
                   bookmarks: it.totalBookmarks,
-                  comments: it.totalComments,
+                  comments: it.totalComments ?? 0,
                   createDate: it.createDate,
                 ),
               )
