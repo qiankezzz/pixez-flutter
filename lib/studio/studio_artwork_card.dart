@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'studio_theme.dart';
 
 /// Gallery-first minimalist artwork card for PixEz masonry feeds.
