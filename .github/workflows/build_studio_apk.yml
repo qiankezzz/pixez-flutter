@@ -53,9 +53,32 @@ jobs:
       - name: Build split release APKs
         run: flutter build apk --release --split-per-abi
 
-      - name: Upload Studio APK Artifact
+      - name: Self-sign Release APKs (fix packageinfo is null)
+        run: |
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          keytool -genkeypair -v \
+            -keystore studio.jks \
+            -alias pixezstudio \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass 123456 -keypass 123456 \
+            -dname "CN=PixEzStudio, OU=Dev, O=Personal, L=Tokyo, S=Tokyo, C=JP"
+
+          mkdir -p signed-apks
+          for apk in build/app/outputs/flutter-apk/*.apk; do
+            name=$(basename "$apk" .apk)
+            "$BUILD_TOOLS/zipalign" -f -p 4 "$apk" "signed-apks/${name}-aligned.apk"
+            "$BUILD_TOOLS/apksigner" sign \
+              --ks studio.jks --ks-key-alias pixezstudio \
+              --ks-pass pass:123456 --key-pass pass:123456 \
+              --out "signed-apks/${name}-signed.apk" \
+              "signed-apks/${name}-aligned.apk"
+            rm -f "signed-apks/${name}-aligned.apk"
+          done
+
+      - name: Upload Signed Studio APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: pixez-studio-android-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          path: signed-apks/*-signed.apk
           retention-days: 14
+    
