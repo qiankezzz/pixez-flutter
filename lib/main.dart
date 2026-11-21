@@ -1,16 +1,16 @@
 /*
- * Copyright (C) 2020. by perol_notsf, All rights reserved
+- Copyright (C) 2020. by perol_notsf, All rights reserved
  *
- * This program is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later version.
+- This program is free software: you can redistribute it and/or modify it under
+- the terms of the GNU General Public License as published by the Free Software
+- Foundation, either version 3 of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+- This program is distributed in the hope that it will be useful, but WITHOUT ANY
+- WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+- FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
+- You should have received a copy of the GNU General Public License along with
+- this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 import 'dart:async';
@@ -46,6 +46,7 @@ import 'package:pixez/store/save_store.dart';
 import 'package:pixez/store/tag_history_store.dart';
 import 'package:pixez/store/top_store.dart';
 import 'package:pixez/store/user_setting.dart';
+import 'package:pixez/studio/studio_theme.dart';
 import 'package:pixez/win32_plugin.dart';
 import 'package:rhttp/rhttp.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -72,7 +73,6 @@ main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (Platform.isWindows || Platform.isLinux) {
-    // sqflite ffi init
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
 
@@ -83,8 +83,6 @@ main(List<String> args) async {
     }
     databaseFactory.setDatabasesPath(dbPath.path);
 
-    // 确保只有一个实例正在运行
-    // Android 和 iOS 应用本身就是单例程序，无需额外操作
     SingleInstancePlugin.initialize();
   }
   await initFluent(args);
@@ -207,6 +205,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                     ),
                   );
                 }
+
+                // Studio curated light & dark tokens (honors userSetting.seedColor & AMOLED)
+                final lightTokens = StudioTokens.fromPalette(
+                  StudioPalette.light,
+                  accent: lightColorScheme.primary,
+                );
+                final darkTokens = StudioTokens.fromPalette(
+                  userSetting.isAMOLED
+                      ? StudioPalette.oled
+                      : StudioPalette.dark,
+                  accent: darkColorScheme.primary,
+                );
+
                 return MaterialApp(
                   navigatorObservers: [
                     BotToastNavigatorObserver(),
@@ -244,17 +255,36 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
                       },
                     ),
-                    primaryColor: lightColorScheme.primary,
+                    primaryColor: lightTokens.accent,
                     colorScheme: lightColorScheme,
-                    scaffoldBackgroundColor: lightColorScheme.surface,
-                    cardColor: lightColorScheme.surfaceContainer,
+                    scaffoldBackgroundColor: lightTokens.bg,
+                    cardColor: lightTokens.surface,
+                    dividerColor: lightTokens.border,
+                    appBarTheme: AppBarTheme(
+                      backgroundColor: lightTokens.bg,
+                      foregroundColor: lightTokens.textPrimary,
+                      elevation: 0,
+                      scrolledUnderElevation: 0,
+                    ),
+                    cardTheme: CardThemeData(
+                      color: lightTokens.surface,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: BorderSide(color: lightTokens.border),
+                      ),
+                    ),
                     chipTheme: ChipThemeData(
-                      backgroundColor: lightColorScheme.surface,
+                      backgroundColor: lightTokens.surfaceSubtle,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                     ),
-                    canvasColor: lightColorScheme.surfaceContainer,
+                    canvasColor: lightTokens.surface,
                     dialogTheme: DialogThemeData(
-                      backgroundColor: lightColorScheme.surfaceContainer,
+                      backgroundColor: lightTokens.surface,
                     ),
+                    extensions: [lightTokens],
                   ),
                   darkTheme: ThemeData(
                     brightness: Brightness.dark,
@@ -265,14 +295,28 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
                       },
                     ),
-                    scaffoldBackgroundColor: userSetting.isAMOLED
-                        ? Colors.black
-                        : null,
-                    // tabBarTheme: TabBarTheme(dividerColor: Colors.transparent),
+                    scaffoldBackgroundColor: darkTokens.bg,
+                    cardColor: darkTokens.surface,
+                    dividerColor: darkTokens.border,
+                    appBarTheme: AppBarTheme(
+                      backgroundColor: darkTokens.bg,
+                      foregroundColor: darkTokens.textPrimary,
+                      elevation: 0,
+                      scrolledUnderElevation: 0,
+                    ),
+                    cardTheme: CardThemeData(
+                      color: darkTokens.surface,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: BorderSide(color: darkTokens.border),
+                      ),
+                    ),
                     tabBarTheme: TabBarThemeData(
                       dividerColor: Colors.transparent,
                     ),
                     colorScheme: darkColorScheme,
+                    extensions: [darkTokens],
                   ),
                   localizationsDelegates: [
                     AppLocalizations.delegate,
